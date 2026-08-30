@@ -23,6 +23,8 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
+  /* 防止超长连续字符(网址、邮箱等)撑破容器 */
+  word-break: break-word;
 }
 
 a {

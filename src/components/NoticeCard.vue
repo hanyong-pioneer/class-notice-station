@@ -30,8 +30,9 @@ const onStar = () => {
     <p v-if="notice.summary" class="card-summary">{{ notice.summary }}</p>
     <div v-if="next" class="card-foot">
       <span class="badge" :class="'badge-' + urgencyClass(next.date)">
-        ⏰ {{ fmtDate(next.date) }} {{ next.label }} · {{ relDay(next.date) }}
+        ⏰ {{ fmtDate(next.date) }} · {{ relDay(next.date) }}
       </span>
+      <div class="deadline-label">{{ next.label }}</div>
     </div>
   </div>
 </template>
@@ -105,5 +106,15 @@ const onStar = () => {
 
 .card-foot {
   margin-top: 10px;
+}
+
+.deadline-label {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--sub);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

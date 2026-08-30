@@ -133,6 +133,9 @@ const soonEvents = computed(() =>
   border-radius: 999px;
   font-size: 13px;
   white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .result-row {
