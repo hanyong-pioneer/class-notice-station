@@ -103,7 +103,7 @@ const navItems = [
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
+  height: 60px;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -111,14 +111,15 @@ const navItems = [
 
 .brand {
   font-weight: 800;
-  font-size: 18px;
+  font-size: 19px;
+  letter-spacing: 0.5px;
 }
 
 .nav-desktop a {
   color: #dbeafe;
   margin-left: 20px;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
   font-size: 15px;
 }
 
@@ -145,7 +146,7 @@ const navItems = [
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 8px 0 6px;
+  padding: 9px 0 7px;
   color: var(--sub);
   font-size: 12px;
 }
@@ -156,7 +157,7 @@ const navItems = [
 }
 
 .nav-icon {
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .foot {

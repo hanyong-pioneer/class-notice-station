@@ -120,12 +120,12 @@ async function shareImage() {
 
     <div class="card">
       <div class="section-title">📅 时间轴</div>
-      <div v-for="(t, i) in (notice.timeline || [])" :key="i" class="tl-row">
-        <span class="badge" :class="'badge-' + urgencyClass(t.date)">{{ relDay(t.date) }}</span>
+      <div v-for="(t, i) in (notice.timeline || [])" :key="i" class="tl-row" :class="'tl-' + urgencyClass(t.date)">
         <div class="tl-main">
           <div class="tl-date">{{ fmtDate(t.date) }} · {{ weekday(t.date) }}</div>
           <div class="tl-label" :class="{ done: urgencyClass(t.date) === 'expired' }">{{ t.label }}</div>
         </div>
+        <span class="badge" :class="'badge-' + urgencyClass(t.date)">{{ relDay(t.date) }}</span>
       </div>
     </div>
 
@@ -197,9 +197,9 @@ async function shareImage() {
 }
 
 .title {
-  font-size: 20px;
+  font-size: 22px;
   margin: 10px 0 6px;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .summary {
@@ -261,7 +261,9 @@ async function shareImage() {
 .tl-row {
   display: flex;
   gap: 10px;
-  padding: 10px 0;
+  align-items: flex-start;
+  padding: 10px 0 14px 26px;
+  position: relative;
   border-bottom: 1px dashed var(--line);
 }
 
@@ -269,8 +271,55 @@ async function shareImage() {
   border-bottom: none;
 }
 
+/* 时间轴竖线 + 圆点,颜色随紧迫度变化 */
+.tl-row::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 16px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2563eb;
+}
+
+.tl-row::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 28px;
+  bottom: -6px;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.tl-row:last-child::after {
+  display: none;
+}
+
+.tl-ok::before {
+  background: #2563eb;
+}
+
+.tl-warn::before {
+  background: #f59e0b;
+}
+
+.tl-danger::before {
+  background: #dc2626;
+}
+
+.tl-expired::before {
+  background: #94a3b8;
+}
+
 .tl-main {
   flex: 1;
+}
+
+.badge {
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .tl-date {

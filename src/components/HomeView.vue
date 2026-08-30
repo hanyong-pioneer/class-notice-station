@@ -85,6 +85,8 @@ const soonEvents = computed(() =>
 
 .search {
   padding-right: 40px;
+  padding-left: 18px;
+  border-radius: 999px;
 }
 
 .search-clear {
@@ -104,13 +106,15 @@ const soonEvents = computed(() =>
 }
 
 .soon {
+  background: var(--light);
+  border-color: #bfdbfe;
   margin-bottom: 14px;
 }
 
 .soon-title {
   font-weight: 700;
   color: var(--deep);
-  font-size: 14px;
+  font-size: 15px;
   margin-bottom: 8px;
 }
 

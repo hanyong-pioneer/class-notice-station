@@ -106,7 +106,7 @@ async function exportXlsx() {
 
 .stat b {
   color: var(--deep);
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .tl-actions {
@@ -125,7 +125,9 @@ async function exportXlsx() {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
 }
 
 .day-date {
