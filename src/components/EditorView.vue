@@ -1,9 +1,8 @@
 <script setup>
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { nextTick, reactive, ref, watch } from 'vue'
 import { CATEGORIES } from '../utils/data.js'
 import { getDraft, setDraft } from '../utils/store.js'
 import { downloadText } from '../utils/download.js'
-import { TEMPLATES } from '../utils/templates.js'
 
 const props = defineProps({
   notices: { type: Array, default: () => [] },
@@ -36,43 +35,6 @@ const emptyForm = () => ({
 const form = reactive(emptyForm())
 const path = ref('self')
 const catKeys = Object.keys(CATEGORIES)
-
-// 快速模板:班委按格填空生成通知草稿
-const quickTpl = ref('')
-const tplData = reactive({})
-const tplMsg = ref('')
-const currentTpl = computed(() => TEMPLATES.find((t) => t.key === quickTpl.value))
-
-watch(quickTpl, (key) => {
-  const tpl = TEMPLATES.find((t) => t.key === key)
-  Object.keys(tplData).forEach((k) => delete tplData[k])
-  if (tpl) {
-    const defs = {}
-    tpl.fields.forEach((f) => (defs[f.key] = f.def ?? ''))
-    Object.assign(tplData, defs)
-  }
-  tplMsg.value = ''
-})
-
-function applyTemplate() {
-  const tpl = currentTpl.value
-  if (!tpl) return
-  const missing = tpl.fields.filter((f) => f.type === 'date' && !f.optional && !tplData[f.key])
-  if (missing.length) {
-    tplMsg.value = '⚠️ 请先填写:' + missing.map((f) => f.label).join('、')
-    return
-  }
-  const notice = {
-    id: null,
-    publishedAt: todayStr(),
-    originalUrl: '#',
-    originalText: '',
-    ...tpl.build({ ...tplData })
-  }
-  selectedId.value = null
-  fillFromNotice(notice)
-  tplMsg.value = '✓ 草稿已生成并填入下方表单,请检查修改后点"校验并生成 JSON"'
-}
 const selectedId = ref(null)
 const errors = ref([])
 const generated = ref('')
@@ -242,27 +204,6 @@ watch(
     </div>
 
     <template v-if="path === 'self'">
-    <div class="card">
-      <div class="section-title">⚡ 快速模板(3 分钟发通知,零 AI 成本)</div>
-      <div class="row">
-        <select v-model="quickTpl" class="input">
-          <option value="">— 选择通知类型,按格填空 —</option>
-          <option v-for="t in TEMPLATES" :key="t.key" :value="t.key">{{ t.name }}</option>
-        </select>
-      </div>
-      <div v-if="currentTpl" class="tpl-panel">
-        <div v-for="f in currentTpl.fields" :key="f.key" class="field">
-          <label>{{ f.label }}{{ f.type === 'date' && f.optional ? '(选填)' : '' }}</label>
-          <input v-model="tplData[f.key]" :type="f.type" class="input" />
-        </div>
-        <div class="tpl-actions">
-          <button class="btn btn-primary" @click="applyTemplate">✅ 生成通知草稿</button>
-          <span class="draft-msg">{{ tplMsg }}</span>
-        </div>
-      </div>
-      <p class="tpl-hint">照着官方通知把格子填完,点"生成通知草稿"后会自动填入下方表单;检查修改无误后照常"校验并生成 JSON"发布</p>
-    </div>
-
     <div class="card">
       <div class="section-title">基本信息</div>
       <div class="field">
@@ -442,27 +383,6 @@ watch(
 .usage-tip {
   color: #b45309;
   margin-top: 4px;
-}
-
-.tpl-panel {
-  margin-top: 12px;
-  padding: 14px;
-  background: #f8fafc;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-}
-
-.tpl-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-top: 4px;
-}
-
-.tpl-hint {
-  font-size: 12px;
-  color: var(--sub);
-  margin-top: 10px;
 }
 
 .row {
