@@ -1,5 +1,7 @@
-// 缓存策略:静态资源 cache-first;notices.json network-first(保证数据最新,离线时退回缓存)
-const CACHE = 'class-notice-station-v1'
+// 缓存策略:
+// - 页面(navigation)与 notices.json:网络优先,离线时退回缓存 —— 保证新版本/新数据及时生效
+// - 带 hash 的静态资源(JS/CSS/图片):缓存优先,文件名含内容指纹,更新后自动指向新文件
+const CACHE = 'class-notice-station-v2'
 
 self.addEventListener('install', () => self.skipWaiting())
 
@@ -24,7 +26,7 @@ self.addEventListener('fetch', (e) => {
     return res
   }
 
-  if (url.pathname.endsWith('notices.json')) {
+  if (req.mode === 'navigate' || url.pathname.endsWith('notices.json')) {
     e.respondWith(
       fetch(req)
         .then(put)
