@@ -1,0 +1,15 @@
+{
+  "name": "班级通知站",
+  "short_name": "通知站",
+  "description": "班级通知拆解聚合:时间轴、操作步骤、材料清单、避坑提醒",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#1e3a8a",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
