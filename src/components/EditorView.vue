@@ -417,7 +417,15 @@ watch(
   gap: 10px;
 }
 
-@media (max-width: 480px) {
+.grid2 > .field {
+  min-width: 0;
+}
+
+.input[type='date'] {
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
   .grid2 {
     grid-template-columns: 1fr;
   }
@@ -433,6 +441,21 @@ watch(
 .date-input {
   flex-shrink: 0;
   width: 160px;
+}
+
+/* 手机端:时间轴/材料等编辑行允许换行,日期输入独占一行 */
+@media (max-width: 480px) {
+  .li-edit {
+    flex-wrap: wrap;
+  }
+  .date-input {
+    width: 100%;
+  }
+  .li-edit .input:not(.date-input),
+  .li-edit .textarea {
+    flex: 1 1 140px;
+    width: auto;
+  }
 }
 
 .no {
