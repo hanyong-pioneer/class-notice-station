@@ -2,9 +2,11 @@
 import { computed, ref } from 'vue'
 import { allEvents, categoryInfo, daysUntil, fmtDate, relDay, urgencyClass, weekday } from '../utils/data.js'
 import { buildICS, downloadICS } from '../utils/ics.js'
+import { downloadCSV, downloadXLSX } from '../utils/exportSchedule.js'
 
 const props = defineProps({ notices: { type: Array, default: () => [] } })
 const showAll = ref(false)
+const xlsxBusy = ref(false)
 
 const groups = computed(() => {
   const evts = allEvents(props.notices).filter((e) => showAll.value || daysUntil(e.date) >= 0)
@@ -27,6 +29,19 @@ const stats = computed(() => {
 })
 
 const downloadAll = () => downloadICS('班级通知日历.ics', buildICS(props.notices))
+const exportCsv = () => downloadCSV(props.notices, '班级通知日程.csv')
+
+async function exportXlsx() {
+  if (xlsxBusy.value) return
+  xlsxBusy.value = true
+  try {
+    await downloadXLSX(props.notices, '班级通知日程.xlsx')
+  } catch {
+    alert('Excel 生成失败,请重试')
+  } finally {
+    xlsxBusy.value = false
+  }
+}
 </script>
 
 <template>
@@ -40,10 +55,12 @@ const downloadAll = () => downloadICS('班级通知日历.ics', buildICS(props.n
         <span class="stat"><b>{{ stats.w30 }}</b> 个在 30 天内</span>
       </div>
       <div class="tl-actions">
-        <button class="btn btn-primary" @click="downloadAll">📅 下载日历(.ics)</button>
+        <button class="btn btn-primary" @click="downloadAll">📅 导出日历(.ics)</button>
+        <button class="btn" :disabled="xlsxBusy" @click="exportXlsx">{{ xlsxBusy ? '生成中…' : '📊 导出 Excel' }}</button>
+        <button class="btn" @click="exportCsv">📄 导出 CSV</button>
         <button class="btn" @click="showAll = !showAll">{{ showAll ? '只看未过期' : '显示全部(含已过期)' }}</button>
       </div>
-      <p class="hint">.ics 文件下载后用手机系统日历打开,即可导入全部截止日期并自动提醒</p>
+      <p class="hint">.ics 可导入手机日历自动提醒;Excel / CSV 可用表格软件查看和编辑</p>
     </div>
 
     <div v-if="!groups.length" class="state">暂无时间节点</div>

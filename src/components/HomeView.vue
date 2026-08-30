@@ -17,7 +17,8 @@ const qLocal = computed({
   get: () => props.q,
   set: (v) => emit('update:q', v)
 })
-const setCat = (k) => emit('update:cat', k)
+// 再点一次已选中的分类 = 取消筛选回到全部
+const setCat = (k) => emit('update:cat', props.cat === k ? 'all' : k)
 const toggleOnly = () => emit('update:onlyFollowed', !props.onlyFollowed)
 
 const filtered = computed(() =>
@@ -54,7 +55,6 @@ const soonEvents = computed(() =>
       <button v-for="k in catKeys" :key="k" class="chip" :class="{ on: cat === k }" @click="setCat(k)">
         {{ k === 'all' ? '全部' : CATEGORIES[k].icon + ' ' + CATEGORIES[k].label }}
       </button>
-      <button class="chip" :class="{ on: onlyFollowed }" @click="toggleOnly">⭐ 关注</button>
     </div>
 
     <div v-if="soonEvents.length" class="card soon">
@@ -66,7 +66,10 @@ const soonEvents = computed(() =>
       </div>
     </div>
 
-    <div class="result-count">共 {{ filtered.length }} 条通知</div>
+    <div class="result-row">
+      <span class="result-count">共 {{ filtered.length }} 条通知</span>
+      <button class="follow-toggle" :class="{ on: onlyFollowed }" @click="toggleOnly">⭐ 只看关注</button>
+    </div>
 
     <NoticeCard v-for="n in filtered" :key="n.id" :notice="n" />
 
@@ -128,9 +131,31 @@ const soonEvents = computed(() =>
   white-space: nowrap;
 }
 
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 2px 2px 10px;
+}
+
 .result-count {
   color: var(--sub);
   font-size: 13px;
-  margin: 0 2px 10px;
+}
+
+.follow-toggle {
+  font-size: 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 12px;
+  color: var(--sub);
+  background: #fff;
+}
+
+.follow-toggle.on {
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #b45309;
+  font-weight: 600;
 }
 </style>

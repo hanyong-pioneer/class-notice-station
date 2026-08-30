@@ -33,6 +33,7 @@ const emptyForm = () => ({
 })
 
 const form = reactive(emptyForm())
+const path = ref('self')
 const catKeys = Object.keys(CATEGORIES)
 const selectedId = ref(null)
 const errors = ref([])
@@ -174,21 +175,35 @@ watch(
 <template>
   <div>
     <div class="card">
-      <div class="section-title">✏️ 班委编辑:录入 / 修改通知</div>
-      <div class="row">
-        <select v-model="selectedId" class="input" @change="loadSelected">
-          <option :value="null" disabled>— 选择要编辑的已有通知 —</option>
-          <option v-for="n in notices" :key="n.id" :value="n.id">{{ n.title }}</option>
-        </select>
-        <button class="btn" @click="resetForm">清空为新通知</button>
+      <div class="section-title">✏️ 班委编辑:两条发布路径</div>
+      <div class="path-tabs">
+        <button class="path-tab" :class="{ on: path === 'agent' }" @click="path = 'agent'">🚀 路径一:代发布</button>
+        <button class="path-tab" :class="{ on: path === 'self' }" @click="path = 'self'">✏️ 路径二:自助编辑</button>
       </div>
-      <div class="row draft-row">
-        <button class="btn" @click="saveDraft">💾 保存草稿</button>
-        <button class="btn" @click="loadDraft">📂 载入草稿</button>
-        <span class="draft-msg">{{ draftMsg }}</span>
+      <div v-if="path === 'agent'" class="agent-box">
+        <div class="agent-title">🚀 路径一:代发布(推荐)——适合复杂通知或不想自己动手时</div>
+        <div class="agent-step">1️⃣ 把通知原文(文字 / 截图 / Word / PDF)发给维护者或班委群</div>
+        <div class="agent-step">2️⃣ AI 自动拆解成时间轴、操作步骤、材料清单、避坑提醒,发送预览给你确认</div>
+        <div class="agent-step">3️⃣ 回复"确认"即发布,1~2 分钟后全班同步</div>
+        <p class="agent-hint">走这条路不需要本页面,发消息即可。简单通知想自己发布,请切到"路径二:自助编辑"</p>
       </div>
+      <template v-else>
+        <div class="row">
+          <select v-model="selectedId" class="input" @change="loadSelected">
+            <option :value="null" disabled>— 选择要编辑的已有通知 —</option>
+            <option v-for="n in notices" :key="n.id" :value="n.id">{{ n.title }}</option>
+          </select>
+          <button class="btn" @click="resetForm">清空为新通知</button>
+        </div>
+        <div class="row draft-row">
+          <button class="btn" @click="saveDraft">💾 保存草稿</button>
+          <button class="btn" @click="loadDraft">📂 载入草稿</button>
+          <span class="draft-msg">{{ draftMsg }}</span>
+        </div>
+      </template>
     </div>
 
+    <template v-if="path === 'self'">
     <div class="card">
       <div class="section-title">基本信息</div>
       <div class="field">
@@ -298,16 +313,72 @@ watch(
         <button class="btn" @click="download">⬇ 下载 notices.json</button>
       </div>
       <div class="usage">
-        <b>如何发布:</b>
-        <div>1. 推荐:把生成内容(或原始通知)发给 Claude Code,由 AI 校验并代提交</div>
-        <div>2. 手动:下载后替换仓库中的 public/notices.json,git 提交推送</div>
-        <div>3. 也可以直接复制到 GitHub 网页版编辑 public/notices.json</div>
+        <b>如何发布(路径二·自助):</b>
+        <div>1. 点击"⬇ 下载 notices.json"保存文件</div>
+        <div>2. 打开 github.com/hanyong-pioneer/class-notice-station → 点进 public 文件夹 → 打开 notices.json → 点右上角铅笔图标</div>
+        <div>3. 全选删除原内容 → 粘贴下载文件的内容 → 点绿色 Commit changes 按钮</div>
+        <div>4. 约 1~2 分钟后网站自动更新</div>
+        <div class="usage-tip">提示:不会操作就把生成的 JSON 复制发到班委群,由维护者代发布</div>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <style scoped>
+.path-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.path-tab {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--sub);
+  border-radius: 8px;
+  padding: 9px 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.path-tab.on {
+  background: var(--deep);
+  border-color: var(--deep);
+  color: #fff;
+}
+
+.agent-box {
+  background: var(--light);
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.agent-title {
+  font-weight: 700;
+  color: var(--deep);
+  margin-bottom: 8px;
+}
+
+.agent-step {
+  font-size: 14px;
+  padding: 4px 0;
+  color: var(--text);
+}
+
+.agent-hint {
+  font-size: 12px;
+  color: var(--sub);
+  margin-top: 8px;
+}
+
+.usage-tip {
+  color: #b45309;
+  margin-top: 4px;
+}
+
 .row {
   display: flex;
   gap: 8px;

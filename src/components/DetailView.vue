@@ -5,6 +5,7 @@ import { getChecked, isFollowed, setChecked, toggleFollow } from '../utils/store
 import { buildICS, downloadICS } from '../utils/ics.js'
 import { generateLongImage } from '../utils/longImage.js'
 import { downloadBlob } from '../utils/download.js'
+import { downloadCSV, downloadXLSX } from '../utils/exportSchedule.js'
 
 const props = defineProps({ notice: { type: Object, default: null } })
 
@@ -31,6 +32,19 @@ const onFollow = () => {
 const subCalendar = () => {
   downloadICS(`通知-${sanitize(props.notice.title)}.ics`, buildICS([props.notice], props.notice.id))
 }
+
+const exportCsv = () => downloadCSV([props.notice], `通知-${sanitize(props.notice.title)}.csv`)
+
+async function exportXlsx() {
+  try {
+    await downloadXLSX([props.notice], `通知-${sanitize(props.notice.title)}.xlsx`)
+  } catch {
+    alert('Excel 生成失败,请重试')
+  }
+}
+
+// 点击选项后收起下拉菜单
+const closeMenu = (e) => e.currentTarget.closest('details').removeAttribute('open')
 
 async function saveImage() {
   if (busy.value) return
@@ -93,7 +107,14 @@ async function shareImage() {
         <button class="btn" @click="onFollow">{{ followed ? '⭐ 已关注' : '☆ 关注' }}</button>
         <button class="btn" :disabled="busy" @click="saveImage">🖼 {{ busy ? '生成中…' : '保存长图' }}</button>
         <button class="btn" @click="shareImage">📤 分享长图</button>
-        <button class="btn" @click="subCalendar">📅 订阅日历</button>
+        <details class="export-menu">
+          <summary class="btn">📅 导出日程 ▾</summary>
+          <div class="export-options">
+            <button class="opt" @click="subCalendar; closeMenu($event)">📅 日历(.ics)</button>
+            <button class="opt" @click="exportXlsx; closeMenu($event)">📊 Excel(.xlsx)</button>
+            <button class="opt" @click="exportCsv; closeMenu($event)">📄 表格(.csv)</button>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -194,6 +215,47 @@ async function shareImage() {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+  align-items: center;
+}
+
+.export-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.export-menu summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.export-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.export-options {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  z-index: 5;
+  min-width: 168px;
+  padding: 4px;
+}
+
+.opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.opt:hover {
+  background: var(--light);
 }
 
 .tl-row {
