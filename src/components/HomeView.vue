@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { CATEGORIES, allEvents, daysUntil, fmtDate, searchHit } from '../utils/data.js'
+import { CATEGORIES, searchHit } from '../utils/data.js'
 import { isFollowed } from '../utils/store.js'
 import NoticeCard from './NoticeCard.vue'
 
@@ -32,17 +32,6 @@ const filtered = computed(() =>
     )
     .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || '') || b.id - a.id)
 )
-
-// 未来 7 天内的截止节点速览
-const soonEvents = computed(() =>
-  allEvents(props.notices)
-    .filter((e) => {
-      const d = daysUntil(e.date)
-      return d >= 0 && d <= 7
-    })
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 8)
-)
 </script>
 
 <template>
@@ -56,15 +45,6 @@ const soonEvents = computed(() =>
       <button v-for="k in catKeys" :key="k" class="chip" :class="{ on: cat === k }" @click="setCat(k)">
         {{ k === 'all' ? '全部' : CATEGORIES[k].icon + ' ' + CATEGORIES[k].label }}
       </button>
-    </div>
-
-    <div v-if="soonEvents.length" class="card soon">
-      <div class="soon-title">⏰ 未来 7 天待办</div>
-      <div class="soon-list">
-        <a v-for="e in soonEvents" :key="e.notice.id + '-' + e.date" class="soon-chip" :href="'#/notice/' + e.notice.id">
-          {{ fmtDate(e.date) }} · {{ e.label }}
-        </a>
-      </div>
     </div>
 
     <div class="result-row">
@@ -104,39 +84,6 @@ const soonEvents = computed(() =>
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
-}
-
-.soon {
-  background: var(--light);
-  border-color: #bfdbfe;
-  margin-bottom: 14px;
-}
-
-.soon-title {
-  font-weight: 700;
-  color: var(--deep);
-  font-size: 15px;
-  margin-bottom: 8px;
-}
-
-.soon-list {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-
-.soon-chip {
-  background: var(--light);
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 13px;
-  white-space: nowrap;
-  max-width: 240px;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .result-row {

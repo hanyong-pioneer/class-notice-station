@@ -20,6 +20,9 @@ const inWeChat = /MicroMessenger/i.test(navigator.userAgent)
 const sanitize = (s) => (s || 'notice').replace(/[\\/:*?"<>|\s]+/g, '-').slice(0, 24)
 const imgName = computed(() => sanitize(props.notice.title) + '.png')
 
+// 原始通知链接:占位符 "#" 视为未收录
+const hasOriginal = computed(() => !!(props.notice && props.notice.originalUrl && props.notice.originalUrl !== '#'))
+
 function toggleMat(i) {
   const arr = [...checkedMats.value]
   const at = arr.indexOf(i)
@@ -175,12 +178,13 @@ async function shareImage() {
       <p class="hint">勾选状态仅保存在你的设备上</p>
     </div>
 
-    <div class="card">
+    <div v-if="(notice.attachments || []).length || hasOriginal" class="card">
       <div class="section-title">📎 资料区</div>
       <a v-for="(a, i) in (notice.attachments || [])" :key="i" class="att" :href="a.url" target="_blank" rel="noopener">
         📄 {{ a.name }} ↗
       </a>
-      <a class="att primary" :href="notice.originalUrl" target="_blank" rel="noopener">📜 查看 / 下载原始通知 ↗</a>
+      <a v-if="hasOriginal" class="att primary" :href="notice.originalUrl" target="_blank" rel="noopener">📜 查看 / 下载原始通知 ↗</a>
+      <span v-else class="att no-original">📜 原始通知未收录(班内转发通知,暂无官网原文链接)</span>
     </div>
 
     <div v-if="(notice.pitfalls || []).length" class="card warn">
@@ -434,6 +438,14 @@ async function shareImage() {
 .att.primary {
   background: var(--light);
   border-color: #bfdbfe;
+}
+
+.att.no-original {
+  color: var(--sub);
+  font-weight: 400;
+  background: #f8fafc;
+  border-style: dashed;
+  cursor: default;
 }
 
 .warn {
