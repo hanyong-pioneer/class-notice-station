@@ -5,18 +5,20 @@ import { downloadText } from './download.js'
 
 const HEADERS = ['日期', '星期', '剩余天数', '事项', '通知标题', '分类', '发布单位']
 
-export function buildRows(notices) {
+export function buildRows(notices, includeExpired = false) {
   return notices
     .flatMap((n) =>
-      (n.timeline || []).map((t) => ({
-        日期: t.date,
-        星期: weekday(t.date),
-        剩余天数: daysUntil(t.date) < 0 ? '已过期' : daysUntil(t.date) + ' 天',
-        事项: t.label,
-        通知标题: n.title,
-        分类: categoryInfo(n.category).label,
-        发布单位: n.source || ''
-      }))
+      (n.timeline || [])
+        .filter((t) => includeExpired || daysUntil(t.date) >= 0)
+        .map((t) => ({
+          日期: t.date,
+          星期: weekday(t.date),
+          剩余天数: daysUntil(t.date) < 0 ? '已过期' : daysUntil(t.date) + ' 天',
+          事项: t.label,
+          通知标题: n.title,
+          分类: categoryInfo(n.category).label,
+          发布单位: n.source || ''
+        }))
     )
     .sort((a, b) => a.日期.localeCompare(b.日期))
 }
@@ -26,16 +28,16 @@ const escCsv = (v) => {
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
 }
 
-export function downloadCSV(notices, name) {
-  const rows = buildRows(notices)
+export function downloadCSV(notices, name, includeExpired = false) {
+  const rows = buildRows(notices, includeExpired)
   const lines = [HEADERS.join(',')]
   for (const r of rows) lines.push(HEADERS.map((h) => escCsv(r[h])).join(','))
   downloadText(name, lines.join('\r\n'), 'text/csv')
 }
 
-export async function downloadXLSX(notices, name) {
+export async function downloadXLSX(notices, name, includeExpired = false) {
   const XLSX = await import('xlsx')
-  const ws = XLSX.utils.json_to_sheet(buildRows(notices))
+  const ws = XLSX.utils.json_to_sheet(buildRows(notices, includeExpired))
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '日程')
   XLSX.writeFile(wb, name)

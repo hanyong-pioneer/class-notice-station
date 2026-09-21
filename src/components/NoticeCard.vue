@@ -1,18 +1,18 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { categoryInfo, fmtDate, nextDeadline, relDay, urgencyClass } from '../utils/data.js'
 import { isFollowed, toggleFollow } from '../utils/store.js'
 
 const props = defineProps({ notice: { type: Object, required: true } })
 const cat = computed(() => categoryInfo(props.notice.category))
 const next = computed(() => nextDeadline(props.notice))
-const followed = ref(isFollowed(props.notice.id))
+const followed = computed(() => isFollowed(props.notice.id))
 
 const go = () => {
   location.hash = '#/notice/' + props.notice.id
 }
 const onStar = () => {
-  followed.value = toggleFollow(props.notice.id)
+  toggleFollow(props.notice.id)
 }
 </script>
 

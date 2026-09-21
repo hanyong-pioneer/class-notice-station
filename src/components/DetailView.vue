@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { categoryInfo, fmtDate, relDay, urgencyClass, weekday } from '../utils/data.js'
 import { getChecked, isFollowed, setChecked, toggleFollow } from '../utils/store.js'
 import { buildICS, downloadICS } from '../utils/ics.js'
@@ -10,11 +10,15 @@ import { downloadCSV, downloadXLSX } from '../utils/exportSchedule.js'
 const props = defineProps({ notice: { type: Object, default: null } })
 
 const cat = computed(() => (props.notice ? categoryInfo(props.notice.category) : null))
-const followed = ref(props.notice ? isFollowed(props.notice.id) : false)
+const followed = computed(() => (props.notice ? isFollowed(props.notice.id) : false))
 const checkedMats = ref(props.notice ? getChecked(props.notice.id) : [])
 const busy = ref(false)
+const sharePreview = ref(null) // { url, blob }:页内预览长图,微信内靠长按保存/转发
+
+const inWeChat = /MicroMessenger/i.test(navigator.userAgent)
 
 const sanitize = (s) => (s || 'notice').replace(/[\\/:*?"<>|\s]+/g, '-').slice(0, 24)
+const imgName = computed(() => sanitize(props.notice.title) + '.png')
 
 function toggleMat(i) {
   const arr = [...checkedMats.value]
@@ -25,9 +29,7 @@ function toggleMat(i) {
   setChecked(props.notice.id, arr)
 }
 
-const onFollow = () => {
-  followed.value = toggleFollow(props.notice.id)
-}
+const onFollow = () => toggleFollow(props.notice.id)
 
 const subCalendar = () => {
   downloadICS(`通知-${sanitize(props.notice.title)}.ics`, buildICS([props.notice], props.notice.id))
@@ -46,12 +48,34 @@ async function exportXlsx() {
 // 点击选项后收起下拉菜单
 const closeMenu = (e) => e.currentTarget.closest('details').removeAttribute('open')
 
+function openSharePreview(blob) {
+  closeSharePreview()
+  sharePreview.value = { url: URL.createObjectURL(blob), blob }
+}
+
+function closeSharePreview() {
+  if (sharePreview.value) URL.revokeObjectURL(sharePreview.value.url)
+  sharePreview.value = null
+}
+
+onBeforeUnmount(closeSharePreview)
+
+// 直接跳转 #/notice/A → #/notice/B 时组件不重建,同步材料勾选到新通知
+watch(
+  () => props.notice,
+  (n) => {
+    checkedMats.value = n ? getChecked(n.id) : []
+  }
+)
+
 async function saveImage() {
   if (busy.value) return
   busy.value = true
   try {
     const blob = await generateLongImage(props.notice, cat.value)
-    downloadBlob(blob, sanitize(props.notice.title) + '.png')
+    // 微信内会拦截文件下载,统一走页内预览让用户长按保存
+    if (inWeChat) openSharePreview(blob)
+    else downloadBlob(blob, imgName.value)
   } catch {
     alert('长图生成失败,请重试')
   } finally {
@@ -64,19 +88,25 @@ async function shareImage() {
   busy.value = true
   try {
     const blob = await generateLongImage(props.notice, cat.value)
-    const file = new File([blob], sanitize(props.notice.title) + '.png', { type: 'image/png' })
-    let shared = false
-    if (typeof navigator.share === 'function') {
+    const file = new File([blob], imgName.value, { type: 'image/png' })
+    // 微信内核不支持 Web Share 且拦截下载,直接走页内预览;其他浏览器优先系统分享
+    if (!inWeChat && typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
+      let canShare = false
       try {
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: props.notice.title })
-          shared = true
-        }
+        canShare = navigator.canShare({ files: [file] })
       } catch {
-        /* 用户取消或分享失败,降级为下载 */
+        canShare = false
+      }
+      if (canShare) {
+        try {
+          await navigator.share({ files: [file], title: props.notice.title })
+          return
+        } catch (err) {
+          if (err && err.name === 'AbortError') return // 用户主动取消,不打扰
+        }
       }
     }
-    if (!shared) downloadBlob(blob, sanitize(props.notice.title) + '.png')
+    openSharePreview(blob)
   } catch {
     alert('长图生成失败,请重试')
   } finally {
@@ -110,9 +140,9 @@ async function shareImage() {
         <details class="export-menu">
           <summary class="btn">📅 导出日程 ▾</summary>
           <div class="export-options">
-            <button class="opt" @click="subCalendar; closeMenu($event)">📅 日历(.ics)</button>
-            <button class="opt" @click="exportXlsx; closeMenu($event)">📊 Excel(.xlsx)</button>
-            <button class="opt" @click="exportCsv; closeMenu($event)">📄 表格(.csv)</button>
+            <button class="opt" @click="subCalendar(); closeMenu($event)">📅 日历(.ics)</button>
+            <button class="opt" @click="exportXlsx(); closeMenu($event)">📊 Excel(.xlsx)</button>
+            <button class="opt" @click="exportCsv(); closeMenu($event)">📄 表格(.csv)</button>
           </div>
         </details>
       </div>
@@ -156,6 +186,20 @@ async function shareImage() {
     <div v-if="(notice.pitfalls || []).length" class="card warn">
       <div class="section-title warn-title">⚠️ 避坑提醒</div>
       <div v-for="(p, i) in (notice.pitfalls || [])" :key="i" class="pit">⚠️ {{ p }}</div>
+    </div>
+
+    <!-- 长图页内预览:微信内无法直接下载/系统分享,靠长按图片保存到相册或发送给朋友 -->
+    <div v-if="sharePreview" class="share-mask" @click.self="closeSharePreview">
+      <div class="share-box">
+        <div class="share-tip">
+          {{ inWeChat ? '微信内无法直接下载,请长按下方图片 → 发送给朋友 或 保存到手机相册' : '请长按图片保存,或点击下方按钮下载' }}
+        </div>
+        <img class="share-img" :src="sharePreview.url" alt="通知长图" />
+        <div class="share-btns">
+          <button class="btn btn-primary" @click="downloadBlob(sharePreview.blob, imgName)">⬇ 下载图片</button>
+          <button class="btn" @click="closeSharePreview">关闭</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -405,5 +449,57 @@ async function shareImage() {
   color: #92400e;
   font-size: 15px;
   padding: 4px 0;
+}
+
+.share-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.share-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 88vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.share-tip {
+  font-size: 13px;
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 8px 10px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.share-img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  display: block;
+}
+
+.share-btns {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.share-btns .btn {
+  flex: 1;
 }
 </style>

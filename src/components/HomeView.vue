@@ -21,6 +21,7 @@ const qLocal = computed({
 const setCat = (k) => emit('update:cat', props.cat === k ? 'all' : k)
 const toggleOnly = () => emit('update:onlyFollowed', !props.onlyFollowed)
 
+// 按发布日期从新到旧;同一天发布的按 id 从大到小(后加入的在前)
 const filtered = computed(() =>
   props.notices
     .filter(
@@ -29,7 +30,7 @@ const filtered = computed(() =>
         (!props.onlyFollowed || isFollowed(n.id)) &&
         searchHit(n, props.q)
     )
-    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+    .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || '') || b.id - a.id)
 )
 
 // 未来 7 天内的截止节点速览

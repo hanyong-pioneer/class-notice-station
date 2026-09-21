@@ -28,14 +28,14 @@ const stats = computed(() => {
   }
 })
 
-const downloadAll = () => downloadICS('班级通知日历.ics', buildICS(props.notices))
-const exportCsv = () => downloadCSV(props.notices, '班级通知日程.csv')
+const downloadAll = () => downloadICS('班级通知日历.ics', buildICS(props.notices, null, showAll.value))
+const exportCsv = () => downloadCSV(props.notices, '班级通知日程.csv', showAll.value)
 
 async function exportXlsx() {
   if (xlsxBusy.value) return
   xlsxBusy.value = true
   try {
-    await downloadXLSX(props.notices, '班级通知日程.xlsx')
+    await downloadXLSX(props.notices, '班级通知日程.xlsx', showAll.value)
   } catch {
     alert('Excel 生成失败,请重试')
   } finally {
@@ -60,7 +60,7 @@ async function exportXlsx() {
         <button class="btn" @click="exportCsv">📄 导出 CSV</button>
         <button class="btn" @click="showAll = !showAll">{{ showAll ? '只看未过期' : '显示全部(含已过期)' }}</button>
       </div>
-      <p class="hint">.ics 可导入手机日历自动提醒;Excel / CSV 可用表格软件查看和编辑</p>
+      <p class="hint">.ics 可导入手机日历自动提醒;Excel / CSV 可用表格软件查看和编辑。默认只导出未过期节点,切换“显示全部”后导出也会包含已过期</p>
     </div>
 
     <div v-if="!groups.length" class="state">暂无时间节点</div>

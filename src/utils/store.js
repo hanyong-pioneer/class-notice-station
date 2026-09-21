@@ -1,4 +1,5 @@
 // 本机 localStorage 持久化:关注列表、材料勾选、编辑草稿(均只存在用户自己的设备上)
+import { reactive } from 'vue'
 
 const read = (k, d) => {
   try {
@@ -17,14 +18,17 @@ const write = (k, v) => {
   }
 }
 
-export const isFollowed = (id) => read('followed', []).includes(id)
+// 关注列表:每个用户自己的浏览器里各存一份,互不影响;关闭网站再打开依然保留。
+// 用响应式数组承载,任何组件读写都能即时联动(如“只看关注”下取消关注立即消失)
+const followedList = reactive(read('followed', []))
+
+export const isFollowed = (id) => followedList.includes(id)
 
 export function toggleFollow(id) {
-  const s = read('followed', [])
-  const i = s.indexOf(id)
-  if (i >= 0) s.splice(i, 1)
-  else s.push(id)
-  write('followed', s)
+  const i = followedList.indexOf(id)
+  if (i >= 0) followedList.splice(i, 1)
+  else followedList.push(id)
+  write('followed', [...followedList])
   return i < 0
 }
 

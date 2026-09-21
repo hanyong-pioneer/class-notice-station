@@ -1,4 +1,6 @@
-// 生成 .ics 日历文件:所有时间节点转为全天事件,含提前 1 天的提醒
+// 生成 .ics 日历文件:时间节点转为全天事件,含提前 1 天的提醒
+// includeExpired=false 时跳过已过期节点(默认只导出"接下来要做的事")
+import { daysUntil } from './data.js'
 import { downloadText } from './download.js'
 
 const esc = (s) =>
@@ -8,7 +10,7 @@ const esc = (s) =>
     .replace(/,/g, '\\,')
     .replace(/\r?\n/g, '\\n')
 
-export function buildICS(notices, onlyId = null) {
+export function buildICS(notices, onlyId = null, includeExpired = false) {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -19,6 +21,7 @@ export function buildICS(notices, onlyId = null) {
   for (const n of notices) {
     if (onlyId != null && n.id !== onlyId) continue
     ;(n.timeline || []).forEach((t, i) => {
+      if (!includeExpired && daysUntil(t.date) < 0) return
       lines.push('BEGIN:VEVENT')
       lines.push(`UID:notice-${n.id}-${i}@classnotice`)
       lines.push(`DTSTAMP:${stamp}`)
