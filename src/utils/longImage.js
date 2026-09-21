@@ -188,19 +188,42 @@ function layout(notice, catInfo, ctx, paint) {
   return y
 }
 
+// 两遍绘制:第一遍仅测量得出总高,第二遍在恰好容纳内容的画布上落笔(高度可控,不会触发画布面积上限)
+function renderLongImage(notice, catInfo) {
+  const measureCtx = document.createElement('canvas').getContext('2d')
+  const H = layout(notice, catInfo, measureCtx, false)
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = Math.max(H, 100)
+  layout(notice, catInfo, canvas.getContext('2d'), true)
+  return canvas
+}
+
 export function generateLongImage(notice, catInfo) {
   return new Promise((resolve, reject) => {
     try {
-      // 第一遍:仅测量,得出总高度
-      const measureCtx = document.createElement('canvas').getContext('2d')
-      const H = layout(notice, catInfo, measureCtx, false)
-      // 第二遍:在恰好容纳内容的画布上绘制(高度可控,不会触发画布面积上限)
-      const canvas = document.createElement('canvas')
-      canvas.width = W
-      canvas.height = Math.max(H, 100)
-      const ctx = canvas.getContext('2d')
-      layout(notice, catInfo, ctx, true)
+      const canvas = renderLongImage(notice, catInfo)
       canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('canvas toBlob failed'))), 'image/png')
+    } catch (err) {
+      reject(err)
+    }
+  })
+}
+
+// 一次渲染同时产出 Blob(下载/系统分享用)与 DataURL(页内预览用 —— 微信内长按保存 blob 地址图片不可靠,DataURL 最稳妥)
+export function generateLongImageAssets(notice, catInfo) {
+  return new Promise((resolve, reject) => {
+    try {
+      const canvas = renderLongImage(notice, catInfo)
+      const dataUrl = canvas.toDataURL('image/png')
+      if (!dataUrl || dataUrl.indexOf('data:image/png') !== 0) {
+        reject(new Error('canvas toDataURL failed'))
+        return
+      }
+      canvas.toBlob((b) => {
+        if (b) resolve({ blob: b, dataUrl })
+        else reject(new Error('canvas toBlob failed'))
+      }, 'image/png')
     } catch (err) {
       reject(err)
     }

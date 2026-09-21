@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { categoryInfo, fmtDate, relDay, urgencyClass, weekday } from '../utils/data.js'
 import { getChecked, isFollowed, setChecked, toggleFollow } from '../utils/store.js'
 import { buildICS, downloadICS } from '../utils/ics.js'
-import { generateLongImage } from '../utils/longImage.js'
+import { generateLongImage, generateLongImageAssets } from '../utils/longImage.js'
 import { downloadBlob } from '../utils/download.js'
 import { downloadCSV, downloadXLSX } from '../utils/exportSchedule.js'
 
@@ -13,7 +13,7 @@ const cat = computed(() => (props.notice ? categoryInfo(props.notice.category) :
 const followed = computed(() => (props.notice ? isFollowed(props.notice.id) : false))
 const checkedMats = ref(props.notice ? getChecked(props.notice.id) : [])
 const busy = ref(false)
-const sharePreview = ref(null) // { url, blob }:页内预览长图,微信内靠长按保存/转发
+const sharePreview = ref(null) // { src: DataURL, blob }:页内预览长图,微信内靠长按保存/转发
 
 const inWeChat = /MicroMessenger/i.test(navigator.userAgent)
 
@@ -51,13 +51,11 @@ async function exportXlsx() {
 // 点击选项后收起下拉菜单
 const closeMenu = (e) => e.currentTarget.closest('details').removeAttribute('open')
 
-function openSharePreview(blob) {
-  closeSharePreview()
-  sharePreview.value = { url: URL.createObjectURL(blob), blob }
+function openSharePreview(assets) {
+  sharePreview.value = { src: assets.dataUrl, blob: assets.blob }
 }
 
 function closeSharePreview() {
-  if (sharePreview.value) URL.revokeObjectURL(sharePreview.value.url)
   sharePreview.value = null
 }
 
@@ -75,10 +73,13 @@ async function saveImage() {
   if (busy.value) return
   busy.value = true
   try {
-    const blob = await generateLongImage(props.notice, cat.value)
     // 微信内会拦截文件下载,统一走页内预览让用户长按保存
-    if (inWeChat) openSharePreview(blob)
-    else downloadBlob(blob, imgName.value)
+    if (inWeChat) {
+      openSharePreview(await generateLongImageAssets(props.notice, cat.value))
+    } else {
+      const blob = await generateLongImage(props.notice, cat.value)
+      downloadBlob(blob, imgName.value)
+    }
   } catch {
     alert('长图生成失败,请重试')
   } finally {
@@ -90,10 +91,15 @@ async function shareImage() {
   if (busy.value) return
   busy.value = true
   try {
+    // 微信内核不支持 Web Share 且拦截下载,直接走页内预览
+    if (inWeChat) {
+      openSharePreview(await generateLongImageAssets(props.notice, cat.value))
+      return
+    }
     const blob = await generateLongImage(props.notice, cat.value)
     const file = new File([blob], imgName.value, { type: 'image/png' })
-    // 微信内核不支持 Web Share 且拦截下载,直接走页内预览;其他浏览器优先系统分享
-    if (!inWeChat && typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
+    // 其他浏览器优先系统分享;不支持或失败时降级为页内预览
+    if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
       let canShare = false
       try {
         canShare = navigator.canShare({ files: [file] })
@@ -109,7 +115,7 @@ async function shareImage() {
         }
       }
     }
-    openSharePreview(blob)
+    openSharePreview(await generateLongImageAssets(props.notice, cat.value))
   } catch {
     alert('长图生成失败,请重试')
   } finally {
@@ -198,7 +204,7 @@ async function shareImage() {
         <div class="share-tip">
           {{ inWeChat ? '微信内无法直接下载,请长按下方图片 → 发送给朋友 或 保存到手机相册' : '请长按图片保存,或点击下方按钮下载' }}
         </div>
-        <img class="share-img" :src="sharePreview.url" alt="通知长图" />
+        <img class="share-img" :src="sharePreview.src" alt="通知长图" />
         <div class="share-btns">
           <button class="btn btn-primary" @click="downloadBlob(sharePreview.blob, imgName)">⬇ 下载图片</button>
           <button class="btn" @click="closeSharePreview">关闭</button>
@@ -500,6 +506,8 @@ async function shareImage() {
 
 .share-img {
   width: 100%;
+  height: auto;
+  flex-shrink: 0; /* 关键:防止被 flex 容器垂直压扁,保持长图完整比例 */
   border-radius: 8px;
   border: 1px solid var(--line);
   display: block;
