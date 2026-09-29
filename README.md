@@ -33,7 +33,7 @@ npm run validate   # 校验 public/notices.json 格式
 |---|---|
 | id | 数字,全站唯一 |
 | title / category / source | 标题、分类、发布单位 |
-| category | 枚举:competition 竞赛 / practice 社会实践 / award 评奖评优 / course 课程学习(作业·考试·选课)/ activity 活动 / other 其他 |
+| category | 枚举:competition 竞赛 / practice 社会实践 / award 评奖评优 / funding 资助(助学金·助学贷款)/ course 课程学习(作业·考试·选课)/ activity 活动 / other 其他 |
 | tags | 子标签数组,自由填写,如 `["选课"]`、`["材料填写"]`(选填) |
 | publishedAt | 发布日期,YYYY-MM-DD |
 | originalUrl | 原始通知查看/下载链接 |

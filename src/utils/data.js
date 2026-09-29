@@ -4,6 +4,7 @@ export const CATEGORIES = {
   competition: { label: '竞赛', icon: '🏆', color: '#2563eb' },
   practice: { label: '社会实践', icon: '🌱', color: '#059669' },
   award: { label: '评奖评优', icon: '🎖️', color: '#d97706' },
+  funding: { label: '资助', icon: '💰', color: '#0d9488' },
   course: { label: '课程学习', icon: '📖', color: '#7c3aed' },
   activity: { label: '活动', icon: '🎪', color: '#db2777' },
   other: { label: '其他', icon: '📌', color: '#64748b' }

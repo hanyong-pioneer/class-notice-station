@@ -15,7 +15,7 @@ try {
 }
 
 const errors = []
-const CATS = new Set(['competition', 'practice', 'award', 'course', 'activity', 'other'])
+const CATS = new Set(['competition', 'practice', 'award', 'funding', 'course', 'activity', 'other'])
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 if (typeof data.updatedAt !== 'string') errors.push('缺少 updatedAt 字段')
